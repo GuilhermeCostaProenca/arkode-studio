@@ -1,9 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
-
-const String baseUrl = "https://vida-equilibrio-api-69a356625afd.herokuapp.com";
 
 void main() {
   runApp(const MyApp());
@@ -12,315 +7,116 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
+  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: "GS Flutter",
+      title: 'Flutter Demo',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        // This is the theme of your application.
+        //
+        // TRY THIS: Try running your application with "flutter run". You'll see
+        // the application has a purple toolbar. Then, without quitting the app,
+        // try changing the seedColor in the colorScheme below to Colors.green
+        // and then invoke "hot reload" (save your changes or press the "hot
+        // reload" button in a Flutter-supported IDE, or press "r" if you used
+        // the command line to start the app).
+        //
+        // Notice that the counter didn't reset back to zero; the application
+        // state is not lost during the reload. To reset the state, use hot
+        // restart instead.
+        //
+        // This works for code too, not just values: Most code changes can be
+        // tested with just a hot reload.
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: const UserIdGate(),
+      home: const MyHomePage(title: 'Flutter Demo Home Page'),
     );
   }
 }
 
-///
-/// 1) TELA QUE DECIDE SE PRECISA PEGAR USERID OU ENTRA DIRETO
-///
-class UserIdGate extends StatefulWidget {
-  const UserIdGate({super.key});
+class MyHomePage extends StatefulWidget {
+  const MyHomePage({super.key, required this.title});
+
+  // This widget is the home page of your application. It is stateful, meaning
+  // that it has a State object (defined below) that contains fields that affect
+  // how it looks.
+
+  // This class is the configuration for the state. It holds the values (in this
+  // case the title) provided by the parent (in this case the App widget) and
+  // used by the build method of the State. Fields in a Widget subclass are
+  // always marked "final".
+
+  final String title;
 
   @override
-  State<UserIdGate> createState() => _UserIdGateState();
+  State<MyHomePage> createState() => _MyHomePageState();
 }
 
-class _UserIdGateState extends State<UserIdGate> {
-  String? savedId;
+class _MyHomePageState extends State<MyHomePage> {
+  int _counter = 0;
 
-  @override
-  void initState() {
-    super.initState();
-    _loadId();
-  }
-
-  Future<void> _loadId() async {
-    final prefs = await SharedPreferences.getInstance();
-    final id = prefs.getString("userId");
-
+  void _incrementCounter() {
     setState(() {
-      savedId = id;
+      // This call to setState tells the Flutter framework that something has
+      // changed in this State, which causes it to rerun the build method below
+      // so that the display can reflect the updated values. If we changed
+      // _counter without calling setState(), then the build method would not be
+      // called again, and so nothing would appear to happen.
+      _counter++;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    if (savedId == null) {
-      return UserIdForm(
-        onSaved: () {
-          _loadId();
-        },
-      );
-    } else {
-      return ActivitiesPage(userId: savedId!);
-    }
-  }
-}
-
-///
-/// 2) TELA DE DIGITAR USERID
-///
-class UserIdForm extends StatefulWidget {
-  final VoidCallback onSaved;
-
-  const UserIdForm({super.key, required this.onSaved});
-
-  @override
-  State<UserIdForm> createState() => _UserIdFormState();
-}
-
-class _UserIdFormState extends State<UserIdForm> {
-  final controller = TextEditingController();
-
-  Future<void> _save() async {
-    if (controller.text.trim().isEmpty) return;
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString("userId", controller.text.trim());
-
-    widget.onSaved();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Identificação")),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            TextField(
-              controller: controller,
-              decoration: const InputDecoration(
-                labelText: "Digite seu userId",
-              ),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _save,
-              child: const Text("Continuar"),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-///
-/// 3) TELA PRINCIPAL — LISTA DE ATIVIDADES (GET /atividades)
-///
-class ActivitiesPage extends StatefulWidget {
-  final String userId;
-
-  const ActivitiesPage({super.key, required this.userId});
-
-  @override
-  State<ActivitiesPage> createState() => _ActivitiesPageState();
-}
-
-class _ActivitiesPageState extends State<ActivitiesPage> {
-  List<dynamic> lista = [];
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchAtividades();
-  }
-
-  Future<void> _fetchAtividades() async {
-    try {
-      final url = Uri.parse("$baseUrl/atividades");
-      final resp = await http.get(url);
-
-      if (resp.statusCode == 200) {
-        setState(() {
-          lista = jsonDecode(resp.body);
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Atividades carregadas")),
-        );
-      } else {
-        throw Exception("Erro");
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Falha ao carregar")),
-      );
-    }
-  }
-
-  Future<void> _trocarUserId() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove("userId");
-
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const UserIdGate()),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
+    // This method is rerun every time setState is called, for instance as done
+    // by the _incrementCounter method above.
+    //
+    // The Flutter framework has been optimized to make rerunning build methods
+    // fast, so that you can just rebuild anything that needs updating rather
+    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Todas atividades"),
-        actions: [
-          IconButton(
-            onPressed: _trocarUserId,
-            icon: const Icon(Icons.person),
-          )
-        ],
+        // TRY THIS: Try changing the color here to a specific color (to
+        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
+        // change color while the other colors stay the same.
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        // Here we take the value from the MyHomePage object that was created by
+        // the App.build method, and use it to set our appbar title.
+        title: Text(widget.title),
       ),
-      body: ListView.builder(
-        itemCount: lista.length,
-        itemBuilder: (_, i) {
-          final item = lista[i];
-          return ListTile(
-            title: Text(item["titulo"] ?? "Sem título"),
-            subtitle: Text(item["descricao"] ?? ""),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => DetalhePage(
-                    id: item["id"].toString(),
-                    userId: widget.userId,
-                  ),
-                ),
-              );
-            },
-          );
-        },
-      ),
-    );
-  }
-}
-
-///
-/// 4) DETALHE DA ATIVIDADE (GET /atividades/{id}?nome=)
-///
-class DetalhePage extends StatefulWidget {
-  final String id;
-  final String userId;
-
-  const DetalhePage({
-    super.key,
-    required this.id,
-    required this.userId,
-  });
-
-  @override
-  State<DetalhePage> createState() => _DetalhePageState();
-}
-
-class _DetalhePageState extends State<DetalhePage> {
-  Map<String, dynamic>? atividade;
-  List<String> joined = [];
-
-  @override
-  void initState() {
-    super.initState();
-    _carregarDetalhe();
-    _carregarParticipacoes();
-  }
-
-  Future<void> _carregarParticipacoes() async {
-    final prefs = await SharedPreferences.getInstance();
-    joined = prefs.getStringList("joinedActivities") ?? [];
-    setState(() {});
-  }
-
-  Future<void> _salvarParticipacoes() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList("joinedActivities", joined);
-  }
-
-  Future<void> _carregarDetalhe() async {
-    try {
-      final url = Uri.parse(
-        "$baseUrl/atividades/${widget.id}?nome=${widget.userId}",
-      );
-
-      final resp = await http.get(url);
-
-      if (resp.statusCode == 200) {
-        setState(() {
-          atividade = jsonDecode(resp.body);
-        });
-      } else {
-        throw Exception("erro");
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Erro ao carregar detalhe")),
-      );
-    }
-  }
-
-  bool get participa => joined.contains(widget.id);
-
-  Future<void> _toggleParticipacao() async {
-    if (participa) {
-      joined.remove(widget.id);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Você saiu da atividade")),
-      );
-    } else {
-      joined.add(widget.id);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Você entrou na atividade")),
-      );
-    }
-
-    await _salvarParticipacoes();
-    setState(() {});
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (atividade == null) {
-      return Scaffold(
-        appBar: AppBar(),
-        body: const Center(child: CircularProgressIndicator()),
-      );
-    }
-
-    return Scaffold(
-      appBar: AppBar(title: Text(atividade!["titulo"] ?? "Detalhes")),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
+      body: Center(
+        // Center is a layout widget. It takes a single child and positions it
+        // in the middle of the parent.
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+          // Column is also a layout widget. It takes a list of children and
+          // arranges them vertically. By default, it sizes itself to fit its
+          // children horizontally, and tries to be as tall as its parent.
+          //
+          // Column has various properties to control how it sizes itself and
+          // how it positions its children. Here we use mainAxisAlignment to
+          // center the children vertically; the main axis here is the vertical
+          // axis because Columns are vertical (the cross axis would be
+          // horizontal).
+          //
+          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
+          // action in the IDE, or press "p" in the console), to see the
+          // wireframe for each widget.
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            const Text('You have pushed the button this many times:'),
             Text(
-              atividade!["titulo"] ?? "",
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
+              '$_counter',
+              style: Theme.of(context).textTheme.headlineMedium,
             ),
-            const SizedBox(height: 10),
-            Text(atividade!["descricao"] ?? ""),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _toggleParticipacao,
-              child: Text(participa ? "Sair" : "Se juntar"),
-            )
           ],
         ),
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _incrementCounter,
+        tooltip: 'Increment',
+        child: const Icon(Icons.add),
+      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
